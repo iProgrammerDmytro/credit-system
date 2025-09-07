@@ -12,7 +12,7 @@ Key ideas:
 ## ⚡ TL;DR (Quick Start)
 
 ```bash
-cp env.example .env
+cp .env.example .env
 docker compose up --build
 ```
 
