@@ -1,0 +1,64 @@
+services:
+  db:
+    container_name: db
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-credits}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+  
+  redis:
+    container_name: redis
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+  
+  web:
+    container_name: web
+    build: .
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    env_file: .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+  
+  beat:
+    container_name: beat
+    build: .
+    command: celery -A config.celery_app beat -l info
+    volumes:
+      - .:/app
+    env_file: .env
+    depends_on:
+      - redis
+      - db
+  
+  worker:
+    container_name: worker
+    build: .
+    command: celery -A config.celery_app worker -l info
+    volumes:
+      - .:/app
+    env_file: .env
+    depends_on:
+      - web
+      - db
+      - redis
+
+volumes:
+  db_data:
