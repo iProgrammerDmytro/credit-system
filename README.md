@@ -42,6 +42,19 @@ curl -s -H "X-API-Key: $API_KEY" http://localhost:8000/api/balance
 # → {"wallet":"demo","balance":19}
 ```
 
+Last transaction example for a successful `/api/echo`:
+```py
+from credits.models import CreditTransaction
+tx = CreditTransaction.objects.last()
+vars(tx)
+# {
+#  'id': 2109, 'wallet_id': 2, 'delta': -1,
+#  'tx_type': 'debit', 'tx_status': 'committed',
+#  'idempotency_key': None, 'request_id': '...', 'note': 'api-request',
+#  'created_at': datetime(..., tzinfo=UTC)
+# }
+```
+
 You can also create a superuser and inspect all objects in **Django Admin**:
 ```bash
 docker compose exec web python manage.py createsuperuser
@@ -184,7 +197,7 @@ worker  | Task credits.tasks.sweep_pending_tx[...] succeeded in 0.02s: 25
 - `GET /api/echo` (requires `X-API-Key`) → charges **1** on success.
 - Setting `Idempotency-Key` makes repeated calls charge **once**.
 
-Last transaction example for a successful `/api/echo`:
+- Transaction example for a successful `/api/echo`:
 ```py
 from credits.models import CreditTransaction
 tx = CreditTransaction.objects.last()
